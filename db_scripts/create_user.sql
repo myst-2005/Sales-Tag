@@ -42,8 +42,8 @@ BEGIN
   VALUES (
     new_user_id,
     'ceo',
-    'Mohammed Nazil',
-    'mohammednazilk@myst.com'
+    'Admin User',
+    'admin@example.com'
   );
 
 END $$;
