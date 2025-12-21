@@ -15,18 +15,14 @@ import { Course } from '@/types'
 // Oh wait, `createCampaign` takes `target_course_id`.
 
 export default function NewCampaignPage() {
-    // For simplicity, let's just fetch all schools/courses on client or assume dynamic selection.
-    // I'll reuse the logic from AddStudentForm slightly but keep it simple.
-
-    // ... Actually, I'll allow "General" campaigns (no course).
-
     const [schools, setSchools] = useState<any[]>([])
     const [courses, setCourses] = useState<Course[]>([])
     const [selectedSchool, setSelectedSchool] = useState('')
     const [loadingCourses, setLoadingCourses] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
-        // Fetch schools on load - assuming we have getSchools exported in basic form
         import('@/app/actions').then(mod => {
             mod.getSchools().then(data => setSchools(data || []))
         })
@@ -44,11 +40,35 @@ export default function NewCampaignPage() {
         })
     }, [selectedSchool])
 
+    async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault()
+        setIsSubmitting(true)
+        setError(null)
+
+        const formData = new FormData(event.currentTarget)
+        const result = await createCampaign(formData)
+
+        if (result?.error) {
+            setError(result.error)
+            setIsSubmitting(false)
+        } else {
+            // Success - creating campaign redirects, so we don't strictly need to do anything here.
+            // But if it didn't redirect (e.g. success json), we'd handle it.
+            // The action redirects on success, so component unmounts likely.
+        }
+    }
+
     return (
         <div className="max-w-xl mx-auto space-y-6">
             <h1 className="text-2xl font-bold text-slate-900">Import Campaign Leads</h1>
             <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-100">
-                <form action={createCampaign} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {error && (
+                        <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
+                            {error}
+                        </div>
+                    )}
+
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-700">Campaign Name</label>
                         <input name="name" required placeholder="e.g. Summer Bootcamp Blast" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500" />
@@ -64,6 +84,7 @@ export default function NewCampaignPage() {
                                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
                             >
                                 <option value="">Select School</option>
+                                <option value="">General (No specific school)</option>
                                 {schools.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
                         </div>
@@ -100,8 +121,13 @@ export default function NewCampaignPage() {
                         ></textarea>
                     </div>
 
-                    <button type="submit" className="w-full bg-blue-600 text-white rounded-lg py-3 font-medium hover:bg-blue-700">
-                        Upload & Create Campaign
+                    <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full bg-blue-600 text-white rounded-lg py-3 font-medium hover:bg-blue-700 disabled:opacity-50 flex justify-center items-center gap-2"
+                    >
+                        {isSubmitting && <Loader2 className="animate-spin h-5 w-5" />}
+                        {isSubmitting ? 'Creating...' : 'Upload & Create Campaign'}
                     </button>
                 </form>
             </div>
