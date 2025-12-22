@@ -10,6 +10,7 @@ export default async function CampaignDetailsPage({ params }: { params: Promise<
     const { id } = await params
     const supabase = await createClient()
 
+
     // 1. Fetch Campaign + Leads + Converted Student Info
     const { data: campaign, error } = await supabase
         .from('campaigns')
@@ -20,6 +21,9 @@ export default async function CampaignDetailsPage({ params }: { params: Promise<
                 is_converted,
                 student:students!converted_student_id(
                      id,
+                     full_name,
+                     phone,
+                     email,
                      schools(name),
                      courses(name)
                 )
@@ -170,7 +174,51 @@ export default async function CampaignDetailsPage({ params }: { params: Promise<
                         </div>
                     </div>
                 </div>
+
+                {/* Matched Students List */}
+                {convertedLeads.length > 0 && (
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                        <h3 className="text-lg font-bold text-slate-900 mb-4">Matched Students ({convertedLeads.length})</h3>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-sm text-slate-600">
+                                <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+                                    <tr>
+                                        <th className="px-4 py-3 font-semibold">Student Name</th>
+                                        <th className="px-4 py-3 font-semibold">Phone</th>
+                                        <th className="px-4 py-3 font-semibold">Email</th>
+                                        <th className="px-4 py-3 font-semibold">School</th>
+                                        <th className="px-4 py-3 font-semibold">Course</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {convertedLeads.map((lead: any) => (
+                                        <tr key={lead.id} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-4 py-3 font-medium text-slate-900">
+                                                {lead.student?.full_name || 'N/A'}
+                                            </td>
+                                            <td className="px-4 py-3 text-slate-500">
+                                                {lead.student?.phone || lead.phone || 'N/A'}
+                                            </td>
+                                            <td className="px-4 py-3 text-slate-500">
+                                                {lead.student?.email || 'N/A'}
+                                            </td>
+                                            <td className="px-4 py-3 text-slate-500">
+                                                {lead.student?.schools?.name || 'N/A'}
+                                            </td>
+                                            <td className="px-4 py-3 text-slate-500">
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
+                                                    {lead.student?.courses?.name || 'N/A'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     )
 }
+
