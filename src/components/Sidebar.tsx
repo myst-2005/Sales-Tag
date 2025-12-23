@@ -75,7 +75,7 @@ export function Sidebar({ role, isMobile, onLinkClick }: SidebarProps) {
             name: 'Team',
             href: '/dashboard/team',
             icon: Shield,
-            roles: ['admin', 'head_of_sales', 'project_lead']
+            roles: ['admin', 'data_entry']
         },
         {
             name: 'Settings',

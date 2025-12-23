@@ -1,6 +1,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { Check, X, Shield, Trash2 } from 'lucide-react'
+import { redirect } from 'next/navigation'
 import { toggleApproval } from '@/app/actions/team'
 import { deleteUser } from '@/app/actions/admin-users' // Added import
 import RoleSelector from '@/components/team/RoleSelector'
@@ -25,6 +26,11 @@ export default async function TeamPage() {
 
     const { data: { user: currentUser } } = await supabase.auth.getUser()
     const currentProfile = users?.find(u => u.id === currentUser?.id)
+
+    if (currentProfile?.role !== 'admin' && currentProfile?.role !== 'data_entry') {
+        redirect('/dashboard')
+    }
+
     const isAdmin = currentProfile?.role === 'admin'
 
     return (
