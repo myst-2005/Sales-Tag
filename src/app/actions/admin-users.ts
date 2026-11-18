@@ -20,7 +20,7 @@ export async function createUser(formData: FormData) {
         .eq('id', user.id)
         .single()
 
-    if (!requesterProfile || (requesterProfile.role !== 'admin' && requesterProfile.role !== 'ceo')) {
+    if (!requesterProfile || (requesterProfile.role !== 'admin' && requesterProfile.role !== 'ceo' && requesterProfile.role !== 'data_entry')) {
         return { error: 'You do not have permission to create users.' }
     }
 
@@ -28,6 +28,10 @@ export async function createUser(formData: FormData) {
     let password = formData.get('password') as string
     const fullName = formData.get('fullName') as string
     const role = formData.get('role') as Role
+
+    if (requesterProfile.role === 'data_entry' && role !== 'sales_executive') {
+        return { error: 'Data Entry specialists can only add Sales Executives.' }
+    }
     const schoolId = formData.get('schoolId') as string | null
     const phone = formData.get('phone') as string | null
 
@@ -81,13 +85,14 @@ export async function createUser(formData: FormData) {
 
     const { error: profileError } = await supabaseAdmin
         .from('profiles')
-        .update(updateData)
-        .eq('id', authData.user.id)
+        .upsert({
+            id: authData.user.id,
+            ...updateData,
+            email: email // Ensure email is present for upsert incase it's a new row
+        })
 
     if (profileError) {
-        // If update fails (e.g. race condition/trigger trigger lag), try insert just in case
-        // But usually trigger is immediate.
-        return { error: 'User created but profile update failed: ' + profileError.message }
+        return { error: 'Failed to save profile: ' + profileError.message }
     }
 
     revalidatePath('/dashboard/team')

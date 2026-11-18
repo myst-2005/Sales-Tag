@@ -39,7 +39,7 @@ export default async function TeamPage() {
                 <h1 className="text-2xl font-bold tracking-tight text-slate-900">Team Management</h1>
                 <div className="flex gap-3">
                     <AddSchoolModal />
-                    <AddUserModal schools={schools || []} />
+                    <AddUserModal schools={schools || []} currentUserRole={currentProfile?.role} />
                 </div>
             </div>
 

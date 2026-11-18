@@ -76,6 +76,9 @@ create table if not exists public.students (
   mode student_mode_type not null default 'offline',
   assigned_sales_id uuid references public.profiles(id),
   total_fee numeric(12, 2) not null default 0,
+  joining_date timestamp with time zone default now(),
+  payment_plan text check (payment_plan in ('one_time', 'emi', 'cumulative')),
+  batch_id uuid,
   created_by uuid references public.profiles(id),
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now()
@@ -98,6 +101,7 @@ create table if not exists public.campaigns (
   id uuid primary key default uuid_generate_v4(),
   name text not null,
   target_course_id uuid references public.courses(id),
+  target_school_id uuid references public.schools(id),
   start_date date,
   end_date date,
   status text default 'active',
@@ -185,13 +189,17 @@ create policy "Courses viewable by everyone" on public.courses for select using 
 
 -- PROFILES:
 -- View own
+drop policy if exists "Users can see own profile" on public.profiles;
 create policy "Users can see own profile" on public.profiles for select using (auth.uid() = id);
 -- Management view all
+drop policy if exists "Management view all profiles" on public.profiles;
 create policy "Management view all profiles" on public.profiles for select 
-using (public.get_my_role() in ('ceo', 'cfo', 'admin', 'head_of_sales', 'project_lead'));
+using (public.get_my_role() in ('ceo', 'cfo', 'admin', 'head_of_sales', 'project_lead', 'sales_team_lead', 'data_entry'));
 -- Update own (limited)
+drop policy if exists "Users can update own profile" on public.profiles;
 create policy "Users can update own profile" on public.profiles for update using (auth.uid() = id);
 -- Admins update approvals
+drop policy if exists "Admins can update profiles" on public.profiles;
 create policy "Admins can update profiles" on public.profiles for update
 using (public.get_my_role() in ('admin', 'ceo'));
 
@@ -207,6 +215,12 @@ create policy "Management view payments" on public.payments for select
 using (public.get_my_role() in ('ceo', 'cfo', 'admin', 'head_of_sales', 'data_entry'));
 create policy "Data Entry insert payments" on public.payments for insert
 with check (public.get_my_role() in ('data_entry', 'admin'));
+
+-- CAMPAIGNS
+create policy "Campaigns viewable by authenticated" on public.campaigns for select using (auth.role() = 'authenticated');
+create policy "Management manage campaigns" on public.campaigns for all using (
+    public.get_my_role() in ('admin', 'head_of_sales', 'ceo', 'cfo', 'project_lead', 'sales_team_lead', 'data_entry')
+);
 
 -- TARGETS
 create policy "Read targets authenticated" on public.school_targets for select to authenticated using (true);
